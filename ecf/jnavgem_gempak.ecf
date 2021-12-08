@@ -1,0 +1,54 @@
+#PBS -N navgem_gempak_%CYC%
+#PBS -j oe
+#PBS -S /bin/bash
+#PBS -q %QUEUE%
+#PBS -l walltime=01:30:00
+#PBS -l place=vscatter:shared,select=1:ncpus=1:mem=500mb
+#PBS -A %PROJ%-%PROJENVIR%
+#PBS -l debug=true
+ 
+export model=navgem
+
+%include <head.h>
+%include <envir-p1.h>
+
+set -x
+export cyc=%CYC%
+export DCOM_STATUS="data of opportunity"
+
+##############################
+# Load modules
+##############################
+module load intel/${intel_ver}
+module load gempak/${gempak_ver}
+module list
+
+${HOMEnavgem}/jobs/JNAVGEM_GEMPAK
+
+%include <tail.h>
+%manual
+#################################################################################
+#TASKSCRIPT DOCUMENTATION BLOCK
+#
+#TASKSCRIPT:     jnavgem_gempak.ecf
+#LAST MODIFIER:  Holly Uhlenhake/Diane Stokes
+#DATE:           DEC 2021
+#
+#FULL NAME:    %ECF_NAME%
+#
+#PURPOSE:  To execute the job that creates NAVGEM GEMPAK output files
+#
+#JOB SCRIPT CALLED: %PACKAGEHOME%/jobs/JNAVGEM_GEMPAK ==>
+#                   %PACKAGEHOME%/scripts/exgempak.sh.ecf
+#################################################################################
+
+######################################################################
+# Job specific troubleshooting instructions:
+#  see generic troubleshoot manual page
+#  Input data used in dcom is : $DCOMIN/US058GMET-OPSbd2.NAVGEM${fhr}-${PDY}${cyc}-NOAA-halfdeg.gr2
+#  NOTE the message inside the output is normal
+#  GEMPAK-NAGRIB2> [GB -31]  Could not open parameter table file g2varsfnoc0.tbl.
+######################################################################
+
+%end
+

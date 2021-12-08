@@ -1,0 +1,94 @@
+#!/bin/sh
+
+########################################
+# Runs NAVGEM GEMPAK Processing
+########################################
+set -xa
+export PS4='$SECONDS + ' 
+date
+
+####################################
+# make temp directory based on jobid
+####################################
+export DATA=${DATA:-${DATAROOT:?}/${jobid:?}}
+mkdir $DATA
+cd $DATA 
+
+export NET=navgem
+export RUN=navgem
+
+####################################
+# Determine Job Output Name on System
+####################################
+export pgmout="OUTPUT.$$"
+
+export cycle=t${cyc}z 
+
+####################################
+# SENDECF  - Flag Events on ECF
+# SENDDBN  - Issue DBNet Client Calls
+# SENDCOM  - Copy files to /com directory
+####################################
+export SENDCOM=${SENDCOM:-YES}
+export SENDDBN=${SENDDBN:-YES}
+export SENDECF=${SENDECF:-YES}
+
+#
+# GEMPAK/NTRANS environment should already be set by gempak module
+#
+
+export HOMEnavgem=${HOMEnavgem:?}
+export PARMnavgem=${PARMnavgem:-${HOMEnavgem}/parm}
+
+# Run setpdy and initialize PDY variables
+setpdy.sh
+. ./PDY
+
+export DCOMIN=${DCOMIN:-${DCOMROOT}/navgem}
+export COMOUT=${COMOUT:-$(compath.py -o ${NET}/${navgem_ver}/${RUN}.${PDY})/gempak}
+
+if [ ! -f $COMOUT ] ; then
+  mkdir -p -m 775 $COMOUT
+fi
+ 
+env
+
+cp -p ${PARMnavgem}/g2*.tbl .
+
+#
+# Set up model and cycle specific variables
+#
+export fend=024
+export finc=3
+export fstart=000
+export model=navgem
+export GRIB=
+export EXT=""
+export DBN_ALERT_TYPE=FNMOC_NAVGEM_GEMPAK
+########################################################
+# Execute the script.
+########################################################
+$HOMEnavgem/scripts/exnavgem_gempak.sh
+export err=$?
+if [ $err -eq '0' ]; then
+   ########################################################
+   export fend=180
+   export finc=6
+   export fstart=030
+   ########################################################
+   # Execute the script.
+   $HOMEnavgem/scripts/exnavgem_gempak.sh
+   ########################################################
+fi
+
+
+if [ -f $pgmout ]; then
+  cat $pgmout
+fi
+
+cd ${DATAROOT}
+if [ "$KEEPDATA" != "YES" ] ; then
+  rm -rf $DATA
+fi
+
+date
